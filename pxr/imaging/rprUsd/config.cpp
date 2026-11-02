@@ -1,3 +1,4 @@
+// Modified 2026: ArchDirectoryExists outside Windows.
 #include "config.h"
 #include "pxr/base/arch/env.h"
 #include "pxr/base/arch/fileSystem.h"
@@ -43,8 +44,7 @@ bool ArchDirectoryExists(const char* path) {
 
     return false;    // this is not a directory!
 #else
-    throw std::runtime_error("ArchDirectoryExists not implemented for this platform");
-    return false;
+    return TfIsDir(path);
 #endif
 }
 
