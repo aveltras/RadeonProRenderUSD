@@ -1,4 +1,5 @@
 # Copyright 2020 Advanced Micro Devices, Inc
+# Modified 2026: renders of husk in MPlay are not interactive.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -981,7 +982,10 @@ void HdRprConfig::Sync(HdRenderDelegate* renderDelegate) {{
 
         bool interactiveMode = getBoolSetting(_tokens->rprInteractive, false);
 
-        if (renderDelegate->GetRenderSetting<std::string>(_tokens->houdiniInteractive, "normal") != "normal") {{
+        // husk sets houdini:interactive too, to husk:mplay when monitored in
+        // MPlay: still a final render, not the viewport's interactive one.
+        auto houdiniInteractive = renderDelegate->GetRenderSetting<std::string>(_tokens->houdiniInteractive, "normal");
+        if (houdiniInteractive != "normal" && !TfStringStartsWith(houdiniInteractive, "husk:")) {{
             interactiveMode = true;
         }}
 
