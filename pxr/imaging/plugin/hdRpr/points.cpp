@@ -1,5 +1,6 @@
 /************************************************************************
 Copyright 2020 Advanced Micro Devices, Inc
+Modified 2026: displayColor read through UsdPrimvarReader_float3.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -18,6 +19,7 @@ limitations under the License.
 #include "material.h"
 #include "instancer.h"
 
+#include "pxr/imaging/rprUsd/material.h"
 #include "pxr/imaging/rprUsd/debugCodes.h"
 #include "pxr/imaging/hd/extComputationUtils.h"
 #include "pxr/usdImaging/usdImaging/implicitSurfaceMeshUtils.h"
@@ -250,19 +252,25 @@ void HdRprPoints::Sync(
             }
         }
 
-        if (!materialOverrideExists && (dirtyDisplayColors || dirtyInstances)) {
+        const RprUsdMaterial* overrideMaterial = nullptr;
+        if (materialOverrideExists) {
+            auto material = static_cast<const HdRprMaterial*>(
+                sceneDelegate->GetRenderIndex().GetSprim(HdPrimTypeTokens->material, m_materialId));
+            overrideMaterial = material ? material->GetRprMaterialObject() : nullptr;
+        }
+        // The points carry no primvars in RPR: with a material reading
+        // displayColor, they color themselves, per point, as without one.
+        bool ownColors = !materialOverrideExists ||
+            (overrideMaterial && overrideMaterial->ReadsDisplayColor() && m_material);
+
+        if (ownColors && (dirtyDisplayColors || dirtyInstances || dirtyMaterialOverride)) {
             for (size_t i = 0; i < m_instances.size(); ++i) {
                 rprApi->SetMeshMaterial(m_instances[i], m_material, false);
             }
         }
-        else if (materialOverrideExists && (dirtyMaterialOverride || dirtyInstances)) {
-            auto material = static_cast<const HdRprMaterial*>(
-                sceneDelegate->GetRenderIndex().GetSprim(HdPrimTypeTokens->material, m_materialId));
-
-            if (material && material->GetRprMaterialObject()) {
-                for (size_t i = 0; i < m_instances.size(); ++i) {
-                    rprApi->SetMeshMaterial(m_instances[i], material->GetRprMaterialObject(), false);
-                }
+        else if (!ownColors && overrideMaterial && (dirtyMaterialOverride || dirtyInstances)) {
+            for (size_t i = 0; i < m_instances.size(); ++i) {
+                rprApi->SetMeshMaterial(m_instances[i], overrideMaterial, false);
             }
         }
 

@@ -1,5 +1,6 @@
 /************************************************************************
 Copyright 2020 Advanced Micro Devices, Inc
+Modified 2026: displayColor read through UsdPrimvarReader_float3.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -33,6 +34,9 @@ struct RprUsd_MaterialBuilderContext {
     RprUsdImageCache* imageCache;
 
     std::string uvPrimvarName;
+    // Whether a UsdPrimvarReader reads displayColor: points and curves, which
+    // carry no primvars in RPR, then color through it themselves.
+    bool readsDisplayColor;
     bool isShadowCatcher;
     bool isReflectionCatcher;
 

@@ -1,5 +1,6 @@
 /************************************************************************
 Copyright 2020 Advanced Micro Devices, Inc
+Modified 2026: displayColor read through UsdPrimvarReader_float3.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -194,7 +195,10 @@ void HdRprBasisCurves::Sync(HdSceneDelegate* sceneDelegate,
 
     if (m_rprCurve) {
         if (newCurve || (*dirtyBits & HdChangeTracker::DirtyMaterialId)) {
-            if (material && material->GetRprMaterialObject()) {
+            // Curves carry no primvars in RPR: a material reading displayColor
+            // gives way to the curves' own color, as without material.
+            if (material && material->GetRprMaterialObject() &&
+                !material->GetRprMaterialObject()->ReadsDisplayColor()) {
                 rprApi->SetCurveMaterial(m_rprCurve, material->GetRprMaterialObject());
             } else {
                 GfVec3f color(0.18f);

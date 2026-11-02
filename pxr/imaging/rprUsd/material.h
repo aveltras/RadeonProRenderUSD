@@ -1,5 +1,6 @@
 /************************************************************************
 Copyright 2020 Advanced Micro Devices, Inc
+Modified 2026: displayColor read through UsdPrimvarReader_float3.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -30,6 +31,11 @@ public:
     RPRUSD_API
     TfToken const& GetUvPrimvarName() const { return m_uvPrimvarName; }
 
+    // Whether it reads displayColor (UsdPrimvarReader_float3), which points
+    // and curves cannot pass as a primvar: they color themselves instead.
+    RPRUSD_API
+    bool ReadsDisplayColor() const { return m_readsDisplayColor; }
+
     RPRUSD_API
     bool AttachTo(rpr::Shape* mesh, bool displacementEnabled) const;
 
@@ -56,6 +62,7 @@ protected:
     bool m_isShadowCatcher = false;
     bool m_isReflectionCatcher = false;
     TfToken m_uvPrimvarName;
+    bool m_readsDisplayColor = false;
     VtValue m_displacementScale;
 };
 

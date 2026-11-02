@@ -1,5 +1,6 @@
 /************************************************************************
 Copyright 2020 Advanced Micro Devices, Inc
+Modified 2026: displayColor read through UsdPrimvarReader_float3.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -602,6 +603,7 @@ RprUsdMaterial* RprUsdMaterialRegistry::CreateMaterial(
             m_isShadowCatcher = context.isShadowCatcher;
             m_isReflectionCatcher = context.isReflectionCatcher;
             m_uvPrimvarName = TfToken(context.uvPrimvarName);
+            m_readsDisplayColor = context.readsDisplayColor;
             m_displacementScale = std::move(context.displacementScale);
 
             if (m_surfaceNode) {

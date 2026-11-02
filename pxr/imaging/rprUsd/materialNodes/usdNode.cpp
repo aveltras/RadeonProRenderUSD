@@ -1,5 +1,6 @@
 /************************************************************************
 Copyright 2020 Advanced Micro Devices, Inc
+Modified 2026: displayColor read through UsdPrimvarReader_float3.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -484,6 +485,42 @@ bool RprUsd_UsdPrimvarReader::SetInput(
 }
 
 //------------------------------------------------------------------------------
+// RprUsd_UsdPrimvarReaderColor
+//------------------------------------------------------------------------------
+
+RprUsd_UsdPrimvarReaderColor::RprUsd_UsdPrimvarReaderColor(
+    RprUsd_MaterialBuilderContext* ctx,
+    std::map<TfToken, VtValue> const& hydraParameters)
+    : RprUsd_BaseRuntimeNode(RPR_MATERIAL_NODE_PRIMVAR_LOOKUP, ctx) {
+    std::string varname;
+    auto varnameIt = hydraParameters.find(UsdPrimvarReaderTokens->varname);
+    if (varnameIt != hydraParameters.end()) {
+        if (varnameIt->second.IsHolding<TfToken>()) {
+            varname = varnameIt->second.UncheckedGet<TfToken>().GetString();
+        } else if (varnameIt->second.IsHolding<std::string>()) {
+            varname = varnameIt->second.UncheckedGet<std::string>();
+        }
+    }
+    if (varname != "displayColor") {
+        throw RprUsd_NodeError(TfStringPrintf("Only displayColor can be read as a color primvar, not %s", varname.c_str()));
+    }
+
+    // Meshes set displayColor as the primvar of key 0 (HdRprApi).
+    auto status = m_rprNode->SetInput(RPR_MATERIAL_INPUT_VALUE, rpr_uint(0));
+    if (status != RPR_SUCCESS) {
+        throw RprUsd_NodeError(RPR_GET_ERROR_MESSAGE(status, "Failed to set primvar lookup key", ctx->rprContext));
+    }
+    ctx->readsDisplayColor = true;
+}
+
+bool RprUsd_UsdPrimvarReaderColor::SetInput(
+    TfToken const& inputId,
+    VtValue const& value) {
+    // The fallback input: the color without primvar is left to RPR.
+    return true;
+}
+
+//------------------------------------------------------------------------------
 // RprUsd_UsdTransform2d
 //------------------------------------------------------------------------------
 
@@ -594,6 +631,7 @@ void RprUsd_RegisterUsdNode(const char* id) {
 RPRUSD_ARCH_CONSTRUCTOR(RprUsd_RegisterUsdNodes, 255) {
     RprUsd_RegisterUsdNode<RprUsd_UsdPreviewSurface>("UsdPreviewSurface");
     RprUsd_RegisterUsdNode<RprUsd_UsdPrimvarReader>("UsdPrimvarReader_float2");
+    RprUsd_RegisterUsdNode<RprUsd_UsdPrimvarReaderColor>("UsdPrimvarReader_float3");
     RprUsd_RegisterUsdNode<RprUsd_UsdTransform2d>("UsdTransform2d");
     RprUsd_RegisterUsdNode<RprUsd_UsdUVTexture>("UsdUVTexture");
 }

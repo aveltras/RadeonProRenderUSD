@@ -1,5 +1,6 @@
 /************************************************************************
 Copyright 2020 Advanced Micro Devices, Inc
+Modified 2026: displayColor read through UsdPrimvarReader_float3.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -107,6 +108,20 @@ public:
         RprUsd_MaterialBuilderContext* ctx,
         std::map<TfToken, VtValue> const& hydraParameters);
     ~RprUsd_UsdPrimvarReader() override = default;
+
+    bool SetInput(
+        TfToken const& inputId,
+        VtValue const& value) override;
+};
+
+// UsdPrimvarReader_float3 of displayColor: the color primvar (key 0) meshes
+// carry. Any other primvar is unsupported.
+class RprUsd_UsdPrimvarReaderColor : public RprUsd_BaseRuntimeNode {
+public:
+    RprUsd_UsdPrimvarReaderColor(
+        RprUsd_MaterialBuilderContext* ctx,
+        std::map<TfToken, VtValue> const& hydraParameters);
+    ~RprUsd_UsdPrimvarReaderColor() override = default;
 
     bool SetInput(
         TfToken const& inputId,
