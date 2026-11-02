@@ -1,5 +1,6 @@
 /************************************************************************
 Copyright 2020 Advanced Micro Devices, Inc
+Modified 2026: instance transforms from HdInstancerTokens.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -18,10 +19,11 @@ limitations under the License.
 #include "pxr/base/gf/rotation.h"
 #include "pxr/base/gf/matrix4f.h"
 #include "pxr/imaging/hd/sceneDelegate.h"
+#include "pxr/imaging/hd/tokens.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-// TODO: Use HdInstancerTokens when Houdini updates USD to 20.02
+// Instance transform primvars before USD 20.02 (see HdInstancerTokens).
 TF_DEFINE_PRIVATE_TOKENS(
     _tokens,
     (instanceTransform)
@@ -162,10 +164,19 @@ HdTimeSampleArray<VtMatrix4dArray, 2> HdRprInstancer::SampleInstanceTransforms(S
     HdTimeSampleArray<VtValue, 2> rotates;
     HdTimeSampleArray<VtValue, 2> scales;
     delegate->SampleInstancerTransform(instancerId, &instancerXform);
-    delegate->SamplePrimvar(instancerId, _tokens->instanceTransform, &instanceXforms);
-    delegate->SamplePrimvar(instancerId, _tokens->translate, &translates);
-    delegate->SamplePrimvar(instancerId, _tokens->scale, &scales);
-    delegate->SamplePrimvar(instancerId, _tokens->rotate, &rotates);
+    // Since USD 20.02 the instance transforms are the hydra:instance*
+    // primvars (HdInstancerTokens); the former names, the only ones read
+    // until now, are kept as a fallback for older scene delegates.
+    auto samplePrimvar = [&](TfToken const& name, TfToken const& legacyName, HdTimeSampleArray<VtValue, 2>* samples) {
+        delegate->SamplePrimvar(instancerId, name, samples);
+        if (samples->count == 0 || samples->values[0].IsEmpty()) {
+            delegate->SamplePrimvar(instancerId, legacyName, samples);
+        }
+    };
+    samplePrimvar(HdInstancerTokens->instanceTransforms, _tokens->instanceTransform, &instanceXforms);
+    samplePrimvar(HdInstancerTokens->instanceTranslations, _tokens->translate, &translates);
+    samplePrimvar(HdInstancerTokens->instanceScales, _tokens->scale, &scales);
+    samplePrimvar(HdInstancerTokens->instanceRotations, _tokens->rotate, &rotates);
 
     // Hydra might give us falsely varying instancerXform, i.e. more than one time sample with the sample matrix
     // This will lead to huge over computation in case it's the only array with a few time samples
